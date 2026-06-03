@@ -18,22 +18,15 @@ import { NotificationToastService } from '../shared/services/notification.servic
   selector: 'app-products-list',
   standalone: true,
   imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    ShellComponent,
-    MatCardModule,
-    MatTableModule,
-    MatButtonModule,
-    MatIconModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatSelectModule,
-    MatProgressSpinnerModule,
-    MatPaginatorModule,
+    CommonModule, ReactiveFormsModule, ShellComponent,
+    MatCardModule, MatTableModule, MatButtonModule, MatIconModule,
+    MatFormFieldModule, MatInputModule, MatSelectModule,
+    MatProgressSpinnerModule, MatPaginatorModule,
   ],
   template: `
     <app-shell>
       <div class="page-container">
+
         <div class="page-header">
           <h1>Produtos</h1>
           <button mat-raised-button color="primary" (click)="openForm()">
@@ -42,11 +35,11 @@ import { NotificationToastService } from '../shared/services/notification.servic
         </div>
 
         @if (showForm()) {
-          <mat-card style="margin-bottom: 24px; padding: 24px">
-            <h3 style="margin-top: 0">{{ editingId() ? 'Editar' : 'Novo' }} Produto</h3>
+          <div class="form-panel">
+            <h3>{{ editingId() ? 'Editar' : 'Novo' }} Produto</h3>
             <form [formGroup]="form" (ngSubmit)="save()">
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 16px">
-                <mat-form-field appearance="outline" style="grid-column: 1 / -1">
+              <div class="form-grid">
+                <mat-form-field appearance="outline" class="span-full">
                   <mat-label>Nome *</mat-label>
                   <input matInput formControlName="name">
                 </mat-form-field>
@@ -71,19 +64,19 @@ import { NotificationToastService } from '../shared/services/notification.servic
                   <input matInput formControlName="shopee_product_id">
                 </mat-form-field>
               </div>
-              <div style="display:flex; gap: 8px; margin-top: 8px">
+              <div class="form-actions">
                 <button mat-raised-button color="primary" type="submit" [disabled]="form.invalid || saving()">
-                  Salvar
+                  <mat-icon>save</mat-icon> Salvar
                 </button>
                 <button mat-stroked-button type="button" (click)="cancelForm()">Cancelar</button>
               </div>
             </form>
-          </mat-card>
+          </div>
         }
 
-        <mat-card>
+        <div class="section-card">
           @if (loading()) {
-            <div style="padding: 40px; text-align: center"><mat-spinner diameter="40"></mat-spinner></div>
+            <div class="loader"><div class="spin"></div></div>
           } @else {
             <table mat-table [dataSource]="products()">
               <ng-container matColumnDef="name">
@@ -92,11 +85,14 @@ import { NotificationToastService } from '../shared/services/notification.servic
               </ng-container>
               <ng-container matColumnDef="sku">
                 <th mat-header-cell *matHeaderCellDef>SKU</th>
-                <td mat-cell *matCellDef="let p">{{ p.sku ?? '—' }}</td>
+                <td mat-cell *matCellDef="let p">
+                  @if (p.sku) { <code class="mono">{{ p.sku }}</code> }
+                  @else       { <span class="cell-muted">—</span>     }
+                </td>
               </ng-container>
               <ng-container matColumnDef="price">
                 <th mat-header-cell *matHeaderCellDef>Preço</th>
-                <td mat-cell *matCellDef="let p">{{ p.price | currency:'BRL':'symbol':'1.2-2' }}</td>
+                <td mat-cell *matCellDef="let p"><span class="cell-price">{{ p.price | currency:'BRL':'symbol':'1.2-2' }}</span></td>
               </ng-container>
               <ng-container matColumnDef="active">
                 <th mat-header-cell *matHeaderCellDef>Status</th>
@@ -109,8 +105,12 @@ import { NotificationToastService } from '../shared/services/notification.servic
               <ng-container matColumnDef="actions">
                 <th mat-header-cell *matHeaderCellDef>Ações</th>
                 <td mat-cell *matCellDef="let p">
-                  <button mat-icon-button (click)="edit(p)"><mat-icon>edit</mat-icon></button>
-                  <button mat-icon-button color="warn" (click)="delete(p.id)"><mat-icon>delete</mat-icon></button>
+                  <button mat-icon-button (click)="edit(p)" title="Editar">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button color="warn" (click)="delete(p.id)" title="Excluir">
+                    <mat-icon>delete</mat-icon>
+                  </button>
                 </td>
               </ng-container>
               <tr mat-header-row *matHeaderRowDef="columns"></tr>
@@ -118,18 +118,36 @@ import { NotificationToastService } from '../shared/services/notification.servic
             </table>
             <mat-paginator [length]="total()" [pageSize]="pageSize" (page)="onPage($event)"></mat-paginator>
           }
-        </mat-card>
+        </div>
+
       </div>
     </app-shell>
   `,
+  styles: [`
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .span-full  { grid-column: 1 / -1; }
+    .form-actions { display: flex; gap: 8px; margin-top: 6px; }
+    .loader { display: flex; align-items: center; justify-content: center; padding: 56px; }
+    .spin   { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: s 0.75s linear infinite; }
+    @keyframes s { to { transform: rotate(360deg); } }
+    .cell-primary { font-weight: 500; }
+    .cell-dim     { color: var(--fg-2); font-size: 0.875rem; }
+    .cell-muted   { color: var(--fg-3); }
+    .cell-price   { font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .mono {
+      font-family: ui-monospace, 'Cascadia Code', monospace;
+      font-size: 0.78rem; background: var(--elevated); border: 1px solid var(--border);
+      border-radius: 5px; padding: 2px 7px; color: var(--fg-2);
+    }
+  `],
 })
 export class ProductsListComponent implements OnInit {
   columns = ['name', 'sku', 'price', 'active', 'actions'];
   products = signal<any[]>([]);
   suppliers = signal<any[]>([]);
-  total = signal(0);
-  loading = signal(true);
-  saving = signal(false);
+  total    = signal(0);
+  loading  = signal(true);
+  saving   = signal(false);
   showForm = signal(false);
   editingId = signal<string | null>(null);
   pageSize = 20;
@@ -139,10 +157,10 @@ export class ProductsListComponent implements OnInit {
 
   constructor(private api: ApiService, private toast: NotificationToastService, private fb: FormBuilder) {
     this.form = this.fb.group({
-      name: ['', [Validators.required]],
-      supplier_id: ['', Validators.required],
-      sku: [''],
-      price: [0, [Validators.required, Validators.min(0)]],
+      name:              ['', [Validators.required]],
+      supplier_id:       ['', Validators.required],
+      sku:               [''],
+      price:             [0, [Validators.required, Validators.min(0)]],
       shopee_product_id: [''],
     });
   }
@@ -161,9 +179,7 @@ export class ProductsListComponent implements OnInit {
   }
 
   openForm(): void { this.editingId.set(null); this.form.reset({ price: 0 }); this.showForm.set(true); }
-
-  edit(product: any): void { this.editingId.set(product.id); this.form.patchValue(product); this.showForm.set(true); }
-
+  edit(p: any): void { this.editingId.set(p.id); this.form.patchValue(p); this.showForm.set(true); }
   cancelForm(): void { this.showForm.set(false); this.editingId.set(null); this.form.reset(); }
 
   save(): void {
