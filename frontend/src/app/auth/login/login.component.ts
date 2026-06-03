@@ -2,11 +2,6 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatButtonModule } from '@angular/material/button';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from '../../shared/services/auth.service';
 import { NotificationToastService } from '../../shared/services/notification.service';
@@ -14,95 +9,239 @@ import { NotificationToastService } from '../../shared/services/notification.ser
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [
-    CommonModule,
-    ReactiveFormsModule,
-    RouterLink,
-    MatCardModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatButtonModule,
-    MatProgressSpinnerModule,
-    MatIconModule,
-  ],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, MatIconModule],
   template: `
-    <div class="login-container">
-      <mat-card class="login-card">
-        <mat-card-header>
-          <mat-card-title>SupplierHub</mat-card-title>
-          <mat-card-subtitle>Faça login para continuar</mat-card-subtitle>
-        </mat-card-header>
+    <div class="auth-root">
+      <div class="auth-box">
 
-        <mat-card-content>
-          <form [formGroup]="form" (ngSubmit)="onSubmit()">
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Email</mat-label>
-              <input matInput formControlName="email" type="email" autocomplete="email">
-              <mat-icon matSuffix>email</mat-icon>
-              @if (form.get('email')?.hasError('required')) {
-                <mat-error>Email obrigatório</mat-error>
-              }
-              @if (form.get('email')?.hasError('email')) {
-                <mat-error>Email inválido</mat-error>
-              }
-            </mat-form-field>
+        <div class="auth-header">
+          <h1>SupplierHub</h1>
+          <p>Entre na sua conta para continuar</p>
+        </div>
 
-            <mat-form-field appearance="outline" class="full-width">
-              <mat-label>Senha</mat-label>
-              <input matInput formControlName="password" [type]="hidePassword ? 'password' : 'text'" autocomplete="current-password">
-              <button type="button" mat-icon-button matSuffix (click)="hidePassword = !hidePassword">
-                <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
-              </button>
-              @if (form.get('password')?.hasError('required')) {
-                <mat-error>Senha obrigatória</mat-error>
-              }
-            </mat-form-field>
+        <form [formGroup]="form" (ngSubmit)="submit()" class="auth-form">
 
-            <button
-              mat-raised-button
-              color="primary"
-              type="submit"
-              class="full-width"
-              [disabled]="loading || form.invalid"
+          <div class="field">
+            <label>Email</label>
+            <input
+              formControlName="email"
+              type="email"
+              autocomplete="email"
+              placeholder="voce@email.com"
+              [class.invalid]="f['email'].invalid && f['email'].touched"
             >
-              @if (loading) {
-                <mat-spinner diameter="20" style="display: inline-block; margin-right: 8px"></mat-spinner>
-              }
-              Entrar
-            </button>
-          </form>
-        </mat-card-content>
+            @if (f['email'].touched && f['email'].hasError('required')) {
+              <span class="error">Email obrigatório</span>
+            }
+            @if (f['email'].touched && f['email'].hasError('email')) {
+              <span class="error">Email inválido</span>
+            }
+          </div>
 
-        <mat-card-actions>
-          <a routerLink="/auth/register">Não tem conta? Cadastre-se</a>
-        </mat-card-actions>
-      </mat-card>
+          <div class="field">
+            <label>Senha</label>
+            <div class="input-wrap" [class.invalid]="f['password'].invalid && f['password'].touched">
+              <input
+                formControlName="password"
+                [type]="show ? 'text' : 'password'"
+                autocomplete="current-password"
+                placeholder="••••••••"
+              >
+              <button type="button" class="eye-btn" (click)="show = !show" tabindex="-1">
+                <mat-icon>{{ show ? 'visibility_off' : 'visibility' }}</mat-icon>
+              </button>
+            </div>
+            @if (f['password'].touched && f['password'].hasError('required')) {
+              <span class="error">Senha obrigatória</span>
+            }
+          </div>
+
+          <button type="submit" class="btn-submit" [disabled]="loading || form.invalid">
+            <span>{{ loading ? 'Entrando…' : 'Entrar' }}</span>
+            @if (!loading) {
+              <mat-icon>arrow_forward</mat-icon>
+            }
+          </button>
+
+        </form>
+
+        <p class="auth-link">Não tem conta? <a routerLink="/auth/register">Criar conta</a></p>
+
+      </div>
     </div>
   `,
   styles: [`
-    .login-container {
+    .auth-root {
+      min-height: 100vh;
+      background: var(--base);
       display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      background: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%);
-    }
-    .login-card {
-      width: 100%;
-      max-width: 420px;
       padding: 24px;
     }
-    mat-card-header { margin-bottom: 16px; }
-    mat-card-title { font-size: 1.8rem !important; color: #3f51b5; }
-    form { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
-    mat-card-actions { padding: 8px 16px; text-align: center; }
-    mat-card-actions a { color: #3f51b5; text-decoration: none; }
+
+    .auth-box {
+      width: 100%;
+      max-width: 360px;
+    }
+
+    .auth-header {
+      margin-bottom: 32px;
+
+      h1 {
+        font-size: 1.125rem;
+        font-weight: 700;
+        color: var(--fg);
+        margin: 0 0 6px;
+        letter-spacing: -0.01em;
+      }
+      p {
+        font-size: 0.875rem;
+        color: var(--fg-2);
+        margin: 0;
+      }
+    }
+
+    .auth-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+
+      label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--fg-2);
+      }
+
+      input {
+        width: 100%;
+        padding: 10px 12px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        color: var(--fg);
+        font-size: 0.875rem;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.15s;
+
+        &::placeholder { color: var(--fg-3); }
+
+        &:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px var(--accent-ring);
+        }
+
+        &.invalid {
+          border-color: var(--danger);
+          &:focus { box-shadow: 0 0 0 3px rgba(239,68,68,0.2); }
+        }
+      }
+    }
+
+    .input-wrap {
+      display: flex;
+      align-items: center;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color 0.15s;
+      overflow: hidden;
+
+      &:focus-within {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-ring);
+      }
+      &.invalid {
+        border-color: var(--danger);
+        &:focus-within { box-shadow: 0 0 0 3px rgba(239,68,68,0.2); }
+      }
+
+      input {
+        flex: 1;
+        padding: 10px 12px;
+        background: none;
+        border: none;
+        color: var(--fg);
+        font-size: 0.875rem;
+        font-family: inherit;
+        outline: none;
+        &::placeholder { color: var(--fg-3); }
+      }
+    }
+
+    .eye-btn {
+      background: none;
+      border: none;
+      padding: 0 10px;
+      cursor: pointer;
+      color: var(--fg-3);
+      display: flex;
+      align-items: center;
+      transition: color 0.12s;
+      &:hover { color: var(--fg-2); }
+      mat-icon { font-size: 16px !important; width: 16px !important; height: 16px !important; }
+    }
+
+    .error {
+      font-size: 0.75rem;
+      color: var(--danger);
+    }
+
+    .btn-submit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      padding: 10px 16px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius);
+      color: #fff;
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.15s, opacity 0.15s;
+      margin-top: 4px;
+
+      mat-icon { font-size: 16px !important; width: 16px !important; height: 16px !important; }
+
+      &:hover:not([disabled]) { background: #EA6C0A; }
+      &[disabled] { opacity: 0.45; cursor: not-allowed; }
+    }
+
+    .auth-link {
+      margin: 20px 0 0;
+      font-size: 0.8rem;
+      color: var(--fg-2);
+      text-align: center;
+
+      a {
+        color: var(--fg);
+        font-weight: 600;
+        text-decoration: none;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 1px;
+        transition: border-color 0.12s;
+        &:hover { border-color: var(--fg-2); }
+      }
+    }
   `],
 })
 export class LoginComponent {
   form: FormGroup;
   loading = false;
-  hidePassword = true;
+  show = false;
+
+  get f() { return this.form.controls; }
 
   constructor(
     private fb: FormBuilder,
@@ -111,24 +250,17 @@ export class LoginComponent {
     private router: Router,
   ) {
     this.form = this.fb.group({
-      email: ['', [Validators.required, Validators.email]],
+      email:    ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
     });
   }
 
-  onSubmit(): void {
+  submit(): void {
     if (this.form.invalid) return;
     this.loading = true;
-
     this.auth.login(this.form.value).subscribe({
-      next: resp => {
-        const role = resp.user.role;
-        this.router.navigate([role === 'admin' ? '/admin/dashboard' : '/dashboard']);
-      },
-      error: err => {
-        this.toast.error(err.error?.detail ?? 'Credenciais inválidas');
-        this.loading = false;
-      },
+      next: r => this.router.navigate([r.user.role === 'admin' ? '/admin/dashboard' : '/dashboard']),
+      error: e => { this.toast.error(e.error?.detail ?? 'Credenciais inválidas'); this.loading = false; },
     });
   }
 }

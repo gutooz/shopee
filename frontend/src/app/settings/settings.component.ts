@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ShellComponent } from '../shared/components/shell.component';
 import { ApiService } from '../shared/services/api.service';
@@ -18,9 +17,50 @@ import { NotificationToastService } from '../shared/services/notification.servic
     MatCardModule,
     MatButtonModule,
     MatIconModule,
-    MatDividerModule,
-    MatProgressSpinnerModule,
+MatProgressSpinnerModule,
   ],
+  styles: [`
+    .settings-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      max-width: 560px;
+    }
+    .settings-head {
+      display: flex; align-items: center; gap: 14px;
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .head-icon {
+      width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+      background: var(--elevated); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      mat-icon { color: var(--accent); font-size: 18px !important; width: 18px !important; height: 18px !important; }
+    }
+    .head-text { display: flex; flex-direction: column; gap: 2px; }
+    .head-title { font-size: 0.875rem; font-weight: 600; color: var(--fg); margin: 0; }
+    .head-desc  { font-size: 0.78rem; color: var(--fg-2); margin: 0; }
+
+    .settings-loader { display: flex; align-items: center; justify-content: center; padding: 36px; }
+    .spin { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: s 0.75s linear infinite; }
+    @keyframes s { to { transform: rotate(360deg); } }
+
+    .settings-body { padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+    .status-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: var(--radius); border: 1px solid var(--border);
+      background: var(--elevated);
+      mat-icon { font-size: 18px !important; width: 18px !important; height: 18px !important; }
+      &.connected    mat-icon { color: var(--success); }
+      &.disconnected mat-icon { color: var(--danger);  }
+    }
+    .status-text { display: block; font-size: 0.875rem; font-weight: 500; color: var(--fg); }
+    .status-meta { display: block; font-size: 0.75rem; color: var(--fg-2); margin-top: 1px; }
+    .settings-actions { display: flex; gap: 8px; }
+    .disconnect-btn { border-color: rgba(239,68,68,0.35) !important; color: var(--danger) !important; }
+    .disconnect-btn:hover { background: rgba(239,68,68,0.07) !important; }
+  `],
   template: `
     <app-shell>
       <div class="page-container">
@@ -28,40 +68,53 @@ import { NotificationToastService } from '../shared/services/notification.servic
           <h1>Configurações</h1>
         </div>
 
-        <mat-card style="padding: 24px; margin-bottom: 24px">
-          <h3>Integração Shopee</h3>
-          <mat-divider></mat-divider>
+        <div class="settings-card">
+          <div class="settings-head">
+            <div class="head-icon"><mat-icon>storefront</mat-icon></div>
+            <div class="head-text">
+              <h3 class="head-title">Integração Shopee</h3>
+              <p class="head-desc">Conecte sua conta Shopee para sincronizar pedidos</p>
+            </div>
+          </div>
 
           @if (loadingStatus()) {
-            <div style="padding: 24px; text-align: center"><mat-spinner diameter="30"></mat-spinner></div>
+            <div class="settings-loader"><div class="spin"></div></div>
           } @else {
-            <div style="margin-top: 16px">
+            <div class="settings-body">
               @if (shopeeStatus()?.connected) {
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-                  <mat-icon style="color:#4caf50">check_circle</mat-icon>
-                  <span>Shopee conectada — Shop ID: <strong>{{ shopeeStatus()?.shop_id }}</strong></span>
+                <div class="status-row connected">
+                  <mat-icon>check_circle</mat-icon>
+                  <div>
+                    <span class="status-text">Shopee conectada</span>
+                    <span class="status-meta">Shop ID: {{ shopeeStatus()?.shop_id }}</span>
+                  </div>
                 </div>
-                <div style="display:flex;gap:8px">
+                <div class="settings-actions">
                   <button mat-raised-button color="primary" (click)="syncOrders()" [disabled]="syncing()">
-                    <mat-icon>sync</mat-icon>
+                    <mat-icon>{{ syncing() ? 'hourglass_empty' : 'sync' }}</mat-icon>
                     {{ syncing() ? 'Sincronizando...' : 'Sincronizar pedidos' }}
                   </button>
-                  <button mat-stroked-button color="warn" (click)="disconnect()">
+                  <button mat-stroked-button (click)="disconnect()" class="disconnect-btn">
                     <mat-icon>link_off</mat-icon> Desconectar
                   </button>
                 </div>
               } @else {
-                <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-                  <mat-icon style="color:#f44336">cancel</mat-icon>
-                  <span>Shopee não conectada</span>
+                <div class="status-row disconnected">
+                  <mat-icon>cancel</mat-icon>
+                  <div>
+                    <span class="status-text">Shopee não conectada</span>
+                    <span class="status-meta">Conecte para começar a sincronizar pedidos</span>
+                  </div>
                 </div>
-                <button mat-raised-button color="primary" (click)="connectShopee()">
-                  <mat-icon>link</mat-icon> Conectar Shopee
-                </button>
+                <div class="settings-actions">
+                  <button mat-raised-button color="primary" (click)="connectShopee()">
+                    <mat-icon>link</mat-icon> Conectar Shopee
+                  </button>
+                </div>
               }
             </div>
           }
-        </mat-card>
+        </div>
       </div>
     </app-shell>
   `,
